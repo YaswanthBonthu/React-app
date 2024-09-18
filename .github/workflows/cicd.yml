@@ -11,29 +11,20 @@ jobs:
     steps:
       - name: Checkout Source
         uses: actions/checkout@v3
-
       - name: Login to Docker Hub
-        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
       - name: Build Docker Image
         run: docker build -t yaswanth789/react-app .
-
-      - name: Publish image to Docker Hub
+      - name: Publish image to docker hub
         run: docker push yaswanth789/react-app:latest   
 
   deploy: 
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: SSH into EC2 and Deploy    
     steps:
-      - name: SSH into EC2 and Deploy
-        uses: appleboy/ssh-action@v0.1.5
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          port: 22
-          script: |
-            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            docker pull yaswanth789/react-app:latest
-            docker rm -f reactContainer || true
-            docker run -d -p 3000:80 --name reactContainer yaswanth789/react-app:latest
+      - name: Pull image from docker hub
+        run: docker pull yaswanth789/react-app:latest 
+      - name: Delete Old Container
+        run: docker rm -f reactContainer
+      - name: Run docker container
+        run: docker run -d -p 3000:80 --name reactContainer yaswanth789/react-app 
